@@ -27,6 +27,6 @@ function createVis(errors, mapData, spendingData) {
 }
 
 d3.queue()
-    .defer(d3.json, "./custom.geo(1).json")
+    .defer(d3.json, "./gistfile1.js")
     .defer(d3.csv, "./GlobalLandTemperaturesByCountry.csv")
     .await(createVis);
