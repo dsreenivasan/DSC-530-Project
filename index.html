@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>Visualizing Climate Change</title>
+
+<style type="text/css">
+
+  h1, h3, h4, p {
+      text-align: center;
+      align-items:center;
+  }
+    #map {
+      float: left;
+    }
+    #chart {
+       float: right;
+    }
+
+   #legend{
+       float:left;
+      text-align:center;
+   }
+   p{
+       font-weight:bolder;
+   }
+
+  </style>
+  <script src="https://d3js.org/d3.v4.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/11.1.0/nouislider.js"></script>
+</head>
+<body>
+<h1> Visualizing Climate Change</h1>
+<h3>Interactive Explanation of Climate Change and Influence of Greenhouse gases</h3>
+<h4>Divya Sreenivasan - May 7, 2018</h4>
+
+<h2>Tasks</h2>
+<ul>
+    <li>Is it getting hotter? What about Global warming?</li>
+    <li>Effect of Greenhouse gas emission on Climate Change</li>
+    <li>The trend of GHG emissions over a time period</li>
+    <li>What does the Average Surface Temperature say about Climate Change</li>
+</ul>
+
+<p id="country"></p>
+<script type="text/javascript" src="https://d3js.org/d3.v4.js"></script>
+<script src="https://d3js.org/topojson.v1.min.js"></script>
+<script src="https://d3js.org/d3-scale-chromatic.v1.js"></script>
+
+
+<script>
+    function createMap(errors, mapData, tempData, ghgData) {
+        var w = 750;     var h = 600;
+
+        var margin = {top: -5, right: -5, bottom: -5, left: -5};
+
+             
+        var projection = d3.geoEquirectangular()
+            .scale(100)
+            .translate([w/2,h/2]);
+
+        var path = d3.geoPath().projection(projection);
+        
+        var zoom = d3.zoom()
+                    
+                    .scaleExtent([1, 10])
+                    .on("zoom", zoomed);
+
+        var svg = d3.select("body").append("svg")
+        svg.attr('width', w)
+            .attr('height', h)
+            .append("g")
+            .attr("transform", "translate(" + margin.left + "," + margin.right + ")" )
+            .call(d3.zoom().on("zoom", zoomed))
+        
+        var rect = svg.append("rect")
+                    .attr("width", w + margin.left + margin.right)
+                    .attr("height", h + margin.top + margin.bottom)
+                   .style("fill", "none")
+                   .style("pointer-events", "all")
+                  
+        var color = d3.scaleOrdinal(d3.interpolateRdBu).domain([50,40,30,20,10,0,-10]).range([0,0.2,0.4,0.5,0.6,0.8,1]);
+
+        var container = svg.append("g");
+        console.log(mapData.features)
+
+        var x=tempData;
+        var temp=[];
+        tempData.map(function(d){
+            if (d.dt=="2013-08-01"){
+                var el ={};
+                el["country"]=d.Country;
+                el["temp"]=d.AverageTemperature;
+                temp.push(el);
+        }})
+        console.log(color(40));
+
+
+        container.append("g")
+        .attr("width", w)
+        .attr("height", h)
+            .attr("id", "map")
+            .selectAll("path")
+            .data(mapData.features)
+            .enter()
+            .append("path")
+            .attr("d", path)
+            //.style("fill-opacity", 0.3)
+            .style("stroke", "black")
+            .style("stroke-width", 0.5)
+            .style("fill", function(d){
+                if (d.properties.name==temp.country){
+                    return color(temp.temp)
+                 }
+                 else return "rgb(213,222,217)";
+                
+            });
+        
+        
+
+        console.log(temp);
+               
+        d3.select("#map").selectAll("path")
+            .on("mouseover", function(d,i){
+            
+             var bounds = path.bounds(d),
+                dx = bounds[1][0] - bounds[0][0],
+                dy = bounds[1][1] - bounds[0][1],
+                x = (bounds[0][0] + bounds[1][0]) / 2,
+                y = (bounds[0][1] + bounds[1][1]) / 2,
+                scale = .1/ Math.max(dx / w, dy / h),
+                translate = [w - scale * x, h - scale * y];
+
+            d3.select("#map").transition()
+                .duration(500)
+                .style("stroke-width", 1.5 / scale + "px")
+                //.attr("transform", "translate(" + translate + ")scale(" + scale + ")");
+                console.log(d.properties.name)
+                console.log(i)
+                d3.select(this).style("fill","blue")
+                for(i=0;i<x.length;i++){
+                    if(x[i].Country==d.properties.name){
+                        
+                    }
+                 }
+                d3.select("body").selectAll("#chart").remove();
+                createChart (d.properties.name, tempData, ghgData)  
+                 
+            })
+            
+           .on("mouseout", function(d){
+                        container.transition()
+                            .duration(750)
+                            .style("stroke-width", "1.5px")
+                            .attr("transform", "translate(" + margin.left + "," + margin.right + ")")
+            d3.select(this).style("fill", "yellow");})
+    function zoomed() {
+        d3.select("#map").selectAll("path").attr("transform", d3.event.translate).scale(d3.event.scale);
+        g.selectAll("path").attr("d", path);
+}
+}
+
+  function legend (){
+    var margin = {top: 10, right: 10, bottom: 10, left: 10},
+         width = 200 - margin.left - margin.right,
+         height = 200 - margin.top - margin.bottom;
+      
+    var z = d3.scaleOrdinal(d3.schemeCategory10);
+    var svg = d3.select("body").append("svg")
+            .attr("id", "legend")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .attr("transform", "translate(" + margin.left + "," + margin.right + ")" )
+
+    var label=["Carbon Dioxide without Land Use", "Greenhouse gases including indirect CO2","Greenhouse gases without Land Use","HFCs", "Methane without Land Use", "Nitrogen Trifluoride", "Nitrous Oxide", "Perfluorocarbons", "Sulphur Hexafluoride", "Unspecified mix of HFCs & PFCs"]
+    
+    var legend = svg.append("g")
+        .attr("id", "legend")
+        .data(label)
+        .attr("transform","translate(50,30)")
+      .attr("font-family", "sans-serif")
+      .attr("font-size", 10)
+      .attr("text-anchor","end")
+        .selectAll("g")
+        .data(label)
+        .enter().append("g")
+      .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+
+  legend.append("text")
+      .attr("x", width-50)
+      .attr("y", 0)
+      .attr("dy", "0.32em")
+      .text(function(d) { return d; })
+      .style("fill", z)
+      .attr("text-anchor", "end")
+  }                  
+
+function createChart(country, tempData, ghgData){
+
+    var margin = {top: 30, right: 20, bottom: 30, left: 50},
+         width = 750 - margin.left - margin.right,
+         height = 600 - margin.top - margin.bottom;
+
+    var x = d3.scaleLinear().rangeRound([margin.left, width-margin.right]).domain([1990, 2014]);
+    var y = d3.scaleLinear().rangeRound([height-margin.top,margin.bottom])
+    var y1 = d3.scaleLinear().rangeRound([height-margin.top, margin.bottom]);
+    
+    var z = d3.scaleOrdinal(d3.schemeCategory10);
+    var svg = d3.select("body").append("svg")
+            .attr("id", "chart")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+
+    var label=["Carbon Dioxide without Land Use", "Greenhouse gases including indirect CO2","Greenhouse gases without Land Use","HFCs", "Methane without Land Use", "Nitrogen Trifluoride", "Nitrous Oxide", "Perfluorocarbons", "Sulphur Hexafluoride", "Unspecified mix of HFCs & PFCs"]
+    
+       
+    var g=svg.append("g")
+            .attr("transform",
+                    "translate(" + margin.left + "," + margin.top + ")");
+    d3.select("body").select("#country").text(country)
+    var data =[];
+           
+    tempData.map(function(d){
+        if(d.Country==country){
+             var newElement = {};
+             if (d.dt.slice(0,4)>="1990"){
+             newElement['dt']=d.dt.slice(0,4);
+             newElement['temp']=d.AverageTemperature;
+             data.push(newElement);
+             }
+            }})
+    
+    //console.log(data)
+    //console.log(data)
+    // console.log(ghgData);
+    var ghg =[];
+     ghgData.map(function(d){
+            if(d["country_or_area"]===country){
+              console.log(d.country_or_area)
+             var newElement ={};
+             newElement["year"]=d.year;
+             
+             newElement["value"]=d.value;
+             newElement["category"]=d.category;
+             console.log(newElement)
+             ghg.push(newElement)
+         }
+     })
+     //  console.log(data); console.log(ghg);
+y.domain([0, 7500000 ]);
+y1.domain([-40, 45]);
+
+var keys = [];
+for(i=0;i<ghg.length;i++){
+    if (ghg[i].year==2014){
+        keys.push(ghg[i].category);
+    }
+}
+z.domain(keys)
+//console.log(keys)
+ghg.sort(function(a, b, c){
+    return a.year - b.year;
+})
+//console.log(ghg)
+var data2 = d3.nest()
+.key(function(d){ return d.category})
+.entries(ghg)
+console.log(data2)
+
+var line = d3.line()
+//.curve(d3.curveBasis)
+                  .x(function(d) { return x(d.year); })
+                  .y(function(d) { return y(d.value); });
+
+
+var gas = svg.selectAll(".gas")
+            .data(data2)
+            .enter().append("g")
+            .attr("class", "gas")
+    gas.append("path")
+        .attr("class", "line")
+        .attr("d", function(d){ return line(d.values)})
+        .style("stroke", function(d){ return z(d.key)})
+        .style("stroke-width", 2.5 )
+
+svg.append("g")
+    .selectAll(".dot")
+    .data(data)
+    .enter().append("circle")
+    .attr("class", "dot")
+    .attr("r", 3.5)
+    .attr("cx", function(d){ return x(d.dt)})
+    .attr("cy", function(d){ return y1(d.temp)})
+    .attr("fill","black")
+   var focus = svg.append("g").attr("class", "category").style("display","none")
+   focus.append("text").attr("x",9).attr("dy","0.35em")
+   
+
+    svg.append("g")
+        .attr("class","x")
+        .attr("transform", "translate(0," + (height-margin.bottom) + ")")
+        .call(d3.axisBottom(x).ticks(25)./*tickValues([1990,1991,1992,1993,1994,1995,1996,1997,1998,1999,2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014]).*/tickFormat(function(n){return n}))
+
+    svg.append("g")
+        .attr("class","y2")
+        .attr("transform", "translate("+ (width-margin.right)+ ",0)")
+        .call(d3.axisRight(y).ticks(15).tickFormat(function(d){ return d;}))
+        .append("text")
+        .attr("x", 20)
+        .attr("y2", 20)
+        .attr("dy","0.90em")
+        .attr("fill", "#000")
+        .attr("font-weight", "bold")
+        .text("Gas Emissions in kilotonne CO2 equivalent");
+
+    svg.append("g")
+        .attr("transform", "translate("+ margin.left + ",0)")
+        .call(d3.axisLeft(y1).tickFormat(function(n) { return n }))
+        .append("text")
+        //.attr("transform","rotate(-90)")
+        .attr("x", 20)
+        .attr("y1", 20)
+        .attr("dy", "0.90em")
+        .attr("fill", "#000")
+        .attr("font-weight", "bold")
+        .attr("text-anchor","middle")
+        .text("Temperature in °C")
+
+
+    d3.select("#chart").selectAll("path")
+    .on("mouseover", function(d,i){
+        console.log(d,i)
+        d3.select(this).style("stroke-width", 5)
+        d3.select("#text").remove()
+        svg.append("text").attr("id", "text").attr("fill", z(d.key)).attr("font-size", 15).attr("font-weight", "bold").attr("text-anchor", "start").text(d.key.slice(0,20)).attr("x", 75).attr("y", 35)
+
+    })
+    .on("mouseout", function(d,i){ d3.select(this).style("stroke-width", 2.5)
+        d3.select("#text").attr("display","none")})
+   
+}
+
+function createVis(error, mapData, tempData, ghgData){
+
+createMap(error, mapData, tempData, ghgData);
+
+
+createChart( "United States", tempData, ghgData);
+//legend()
+}
+    d3.queue()
+        .defer(d3.json, "https://cdn.rawgit.com/dsreenivasan/DSC-530-Project/3052ed46/gistfile1.js")
+        .defer(d3.csv, "https://cdn.rawgit.com/dsreenivasan/DSC-530-Project/18872678/GlobalLandTemperaturesByCountry.csv")
+        .defer(d3.csv, "https://cdn.rawgit.com/dsreenivasan/DSC-530-Project/9f6cdec9/greenhouse_gas_inventory_data_data.csv")
+        .await(createVis);
+</script>
+
+</body>
+</html>
